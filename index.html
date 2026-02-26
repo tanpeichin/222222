@@ -532,6 +532,47 @@
             margin-bottom: 16px;
         }
 
+        /* 银行账户信息卡片 (新增) */
+        .bank-details-card {
+            background: #f0f0f0;
+            border-radius: 20px;
+            padding: 24px;
+            margin: 24px 0;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 5px 10px -5px rgba(0,0,0,0.05);
+        }
+        .bank-details-card p {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .bank-details-card .label {
+            width: 80px;
+            color: #666;
+            font-weight: 400;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .bank-details-card .value {
+            font-weight: 500;
+            color: #000;
+            background: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            display: inline-block;
+            font-family: monospace;
+            font-size: 16px;
+            border: 1px solid #ddd;
+        }
+        .bank-details-card .value.name-value {
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+        }
+
         /* 计时器 */
         .timer {
             margin-top: 20px;
@@ -797,11 +838,11 @@
                             </div>
                         </div>
 
-                        <!-- Online Banking -->
+                        <!-- Online Banking (Public Bank) -->
                         <div class="payment-option" onclick="selectPayment('bank')">
                             <div class="payment-icon">🏦</div>
                             <div style="flex: 1;">
-                                <strong style="font-size: 14px;">Online Banking</strong>
+                                <strong style="font-size: 14px;">Public Bank (Online Banking)</strong>
                             </div>
                         </div>
                     </div>
@@ -830,7 +871,7 @@
                         </div>
                     </div>
 
-                    <!-- Touch 'n Go QR with Upload - 只修改了图片路径 -->
+                    <!-- Touch 'n Go QR with Upload -->
                     <div class="payment-form hidden" id="tngForm">
                         <div class="qr-container">
                             <div class="qr-image-container">
@@ -863,7 +904,7 @@
                         </div>
                     </div>
 
-                    <!-- GrabPay QR with Upload - 只修改了图片路径 -->
+                    <!-- GrabPay QR with Upload -->
                     <div class="payment-form hidden" id="grabForm">
                         <div class="qr-container">
                             <div class="qr-image-container">
@@ -896,20 +937,39 @@
                         </div>
                     </div>
 
-                    <!-- Online Banking -->
+                    <!-- Online Banking (Public Bank) - 已添加银行账号 -->
                     <div class="payment-form hidden" id="bankForm">
                         <div style="margin-top: 24px;">
+                            <!-- 银行账户信息卡片 (Public Bank) -->
+                            <div class="bank-details-card">
+                                <p>
+                                    <span class="label">Bank:</span>
+                                    <span class="value" style="background: #e6f0ff; border-color: #0066FF;">Public Bank</span>
+                                </p>
+                                <p>
+                                    <span class="label">Name:</span>
+                                    <span class="value name-value">Tan Pei Chin</span>
+                                </p>
+                                <p>
+                                    <span class="label">Account:</span>
+                                    <span class="value">5101791817</span>
+                                </p>
+                                <p style="color: #444; font-size: 13px; margin-top: 16px; margin-bottom: 0; background: white; padding: 12px; border-radius: 12px;">
+                                    💡 Please transfer the exact amount and upload the receipt below.
+                                </p>
+                            </div>
+
                             <div class="form-group">
-                                <label>Select bank</label>
+                                <label>Select bank (for redirection)</label>
                                 <select id="bankSelect">
                                     <option value="">Choose a bank</option>
                                     <option value="maybank">Maybank</option>
                                     <option value="cimb">CIMB Bank</option>
-                                    <option value="public">Public Bank</option>
+                                    <option value="public" selected>Public Bank</option>
                                     <option value="hongleong">Hong Leong Bank</option>
                                 </select>
                             </div>
-                            <p style="color: #999; font-size: 12px; margin-top: 8px;">You'll be redirected to your bank</p>
+                            <p style="color: #999; font-size: 12px; margin-top: 8px;">You'll be redirected to your bank's login page after uploading proof.</p>
                             
                             <!-- 上传付款凭证 -->
                             <div class="upload-section">
@@ -1239,7 +1299,22 @@
             document.querySelectorAll('.payment-option').forEach(opt => {
                 opt.classList.remove('selected');
             });
-            event.currentTarget.classList.add('selected');
+            // 由于event可能未定义，使用当前点击的元素需要传入event，这里简单处理：从全局获取活动元素？但为了兼容，使用active类手动加？用下面方式:
+            // 但因为调用时没有传入event，无法直接使用event.currentTarget。改进：让调用时传入this。但为了保持简洁，可以用一个变通：通过点击事件，但这里我们保持原样，在onclick中传入this。
+            // 快速修复：我们给每个onclick传入this，但改动稍大。为了不影响功能，我们保留原selectPayment逻辑，但需要手动传入元素。这里使用一个备用方法：在onclick里调用selectPayment并传入this。
+            // 但上面已经写了onclick="selectPayment('card')" 没有传入this。为了让选中状态生效，我们稍作修改：通过查询所有option并移除selected，然后根据method手动标记。
+            // 重新标记当前选中的option：根据文本内容找到对应的option加selected类。简单实现：
+            document.querySelectorAll('.payment-option').forEach(opt => {
+                const text = opt.innerText;
+                if ((method === 'card' && text.includes('Card')) ||
+                    (method === 'tng' && text.includes('TNG')) ||
+                    (method === 'grab' && text.includes('Grab')) ||
+                    (method === 'bank' && text.includes('Public'))) {
+                    opt.classList.add('selected');
+                } else {
+                    opt.classList.remove('selected');
+                }
+            });
             
             document.getElementById('cardForm').classList.add('hidden');
             document.getElementById('tngForm').classList.add('hidden');
@@ -1256,6 +1331,8 @@
                 startTimer('grabTimer');
             } else if (method === 'bank') {
                 document.getElementById('bankForm').classList.remove('hidden');
+                // 默认选中Public Bank
+                document.getElementById('bankSelect').value = 'public';
             }
         }
 
@@ -1296,7 +1373,7 @@
                 return;
             }
             if (selectedPaymentMethod === 'bank' && !uploadedFiles.bank) {
-                alert('Please upload your bank transfer receipt');
+                alert('Please upload your bank transfer receipt (screenshot)');
                 return;
             }
             
@@ -1332,7 +1409,7 @@
             let methodName = 'Card';
             if (selectedPaymentMethod === 'tng') methodName = 'TNG';
             else if (selectedPaymentMethod === 'grab') methodName = 'Grab';
-            else if (selectedPaymentMethod === 'bank') methodName = 'Bank Transfer';
+            else if (selectedPaymentMethod === 'bank') methodName = 'Public Bank Transfer';
             document.getElementById('receiptPaymentMethod').textContent = methodName;
             
             document.getElementById('receiptTotal').textContent = (orderData.total || 0).toFixed(2);
